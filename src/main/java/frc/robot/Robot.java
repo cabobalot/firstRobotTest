@@ -71,7 +71,15 @@ public class Robot extends TimedRobot {
     gyro = new ADXRS450_Gyro();
 
     SmartDashboard.putNumber("KP", 0.01);
+    SmartDashboard.putNumber("set point", 100);
 
+  }
+
+
+
+  @Override
+  public void robotPeriodic() {
+    SmartDashboard.putNumber("Distance", getAverageDistance());
   }
 
   /**
@@ -90,16 +98,17 @@ public class Robot extends TimedRobot {
 		encoderRearRight.setPosition(0.0d);
   }
 
-  @Override
-  public void robotPeriodic() {
-    SmartDashboard.putNumber("Distance", getAverageDistance());
-  }
-
   /**
    * This function is called periodically during autonomous.
    */
   @Override
   public void autonomousPeriodic() {
+
+    SmartDashboard.putNumber("Distance", getAverageDistance());
+    SmartDashboard.putNumber("Speed (front left)", encoderFrontLeft.getVelocity());
+
+    safeArcadeDrive( (getAverageDistance() - SmartDashboard.getNumber("set point", 100)) * SmartDashboard.getNumber("KP", 0) , 0.0d);
+
     // if (getAverageDistance() < 1) {
     //   driveTrain.arcadeDrive(0.4, 0);
     // }
@@ -108,12 +117,6 @@ public class Robot extends TimedRobot {
     // }
 
     // gyro.getAngle();
-
-    SmartDashboard.putNumber("Distance", getAverageDistance());
-
-    driveTrain.arcadeDrive( (getAverageDistance() - 100) * SmartDashboard.getNumber("KP", 0) , 0);
-
-
 
   }
 
@@ -135,6 +138,25 @@ public class Robot extends TimedRobot {
 
   private double getAverageDistance() {
     return (getLeftDistance() + getRightDistance()) / 2;
+  }
+
+  private void safeArcadeDrive(double speed, double turn) {
+    double outSpeed = 0;
+    double outTurn = 0;
+
+    if (Math.abs(speed) < 0.1) {
+      outSpeed = 0.0;
+    }
+    else {
+      if (Math.abs(speed) > 0.7) {
+        outSpeed = Math.signum(speed) * 0.7;
+      }
+      if (Math.abs(speed) < 0.3) {
+        outSpeed = Math.signum(speed) * 0.3;
+      }
+    }
+    driveTrain.arcadeDrive(outSpeed, outTurn);
+    SmartDashboard.putNumber("out speed", outSpeed);
   }
 
   /**
